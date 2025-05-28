@@ -16,12 +16,14 @@
 
 (defcustom org-ics-import-exclude-strings '()
   "If the summary of an event contains one of these strings it is excluded."
-  :type '(repeat string))
+  :type '(repeat string)
+  :group 'org-ics-import)
 
 (defcustom org-ics-import-exclude-passed-events t
   "Whether to exclude events that have passed.
-Note that some ical files can contain many of these dates, so which can slow down org agenda."
-  :type 'boolean)
+This can speed up org agenda on large iCalendar files."
+  :type 'boolean
+  :group 'org-ics-import)
 
 (defcustom org-ics-import-calendars-alist '()
   "Association list specifying the mappings between calendars and org files.
@@ -29,10 +31,13 @@ Of the form ((https://full/url/to/calendar.ics . path/to/calendar_org_file.org))
 
 DO NOT INCLUDE YOUR OWN ORG AGENDA FILES HERE!
 They will be overwritten with every calendar refresh."
-  :type '(alist (string string)))
+  :type '(alist (string string))
+  :group 'org-ics-import)
 
 (defcustom org-ics-import-confirmed-overwrite '()
-  "List of org files that are safe to overwrite when updating calendars.")
+  "List of org files that are safe to overwrite when updating calendars."
+  :type '(repeat string)
+  :group 'org-ics-import)
 
 (defcustom org-ics-import-update-interval nil
   "Interval between updating remote calendars. `nil' disables automatic updates."
@@ -56,7 +61,8 @@ They will be overwritten with every calendar refresh."
 ;;;; Automatic Updating
 
 (defun org-ics-import--start-update-timer ()
-  "Start/restart update timer `org-ics-import--update-timer' using interval from `org-ics-import-update-interval'."
+  "Start/restart update timer `org-ics-import--update-timer'.
+Timer interval is specified by `org-ics-import-update-interval'."
   (org-ics-import--stop-update-timer)
   (when org-ics-import-update-interval
     (setq org-ics-import--update-timer (run-at-time nil org-ics-import-update-interval #'org-ics-import-refresh-calendars))))
@@ -79,8 +85,9 @@ They will be overwritten with every calendar refresh."
 
 (defun org-ics-import--create-property-list (event)
   "Create a list of properties from `event' for the org :PROPERTIES: drawer.
-This list excludes the SUMMARY, DTSTART, LCOATION, DESCRIPTION and UID properties as they are represented elsewhere in the TODO.
-'ICAL_' will be added to the start of the property name to protect it from future org built in property changes."
+This list excludes the SUMMARY, DTSTART, LCOATION, DESCRIPTION and UID properties
+as they are represented elsewhere in the TODO.
+\\='ICAL_\\=' is added to the start of the property name."
   (let ((properties (caddr event)))
     (string-join
      (remove nil
@@ -92,13 +99,13 @@ This list excludes the SUMMARY, DTSTART, LCOATION, DESCRIPTION and UID propertie
 
 (defun org-ics-import--read-buffer-to-list (buffer)
   (let ((unfolded-buffer (icalendar--get-unfolded-buffer buffer)))
-    (save-excursion
-      (set-buffer unfolded-buffer)
+    (with-current-buffer unfolded-buffer
       (goto-char (point-min))
       (icalendar--read-element nil nil))))
 
 (defun org-ics-import--ics-url-to-org (ics-url org-file)
-  "Download ics file from `ics-url' asynchronously, parsing events and then updating `org-file' by overwriting."
+  "Download ics file from `ics-url' asynchronously.
+Events are then parsed and then `org-file' overwritten."
   (url-retrieve
    ics-url
    (let ((target-file org-file))
