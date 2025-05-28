@@ -2,7 +2,7 @@
 
 ;; Author: Struan Robertson contact@struan.tech
 ;; Version 1.0
-;; Package-Requires: ((emacs "29.0") (icalendar))
+;; Package-Requires: ((emacs "29.0"))
 
 ;;; Commentary
 ;; A pure Emacs Lisp package for the importing of remote iCalendar files to org agenda
