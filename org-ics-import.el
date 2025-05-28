@@ -59,7 +59,7 @@ They will be overwritten with every calendar refresh."
   "Start/restart update timer `org-ics-import--update-timer' using interval from `org-ics-import-update-interval'."
   (org-ics-import--stop-update-timer)
   (when org-ics-import-update-interval
-    (setq org-ics-import--update-timer (run-at-time nil org-ics-import-update-interval #'org-ics-refresh-calendars))))
+    (setq org-ics-import--update-timer (run-at-time nil org-ics-import-update-interval #'org-ics-import-refresh-calendars))))
 
 (defun org-ics-import--stop-update-timer ()
   "Stop current update timer `org-ics-import--update-timer'."
