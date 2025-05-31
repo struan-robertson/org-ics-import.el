@@ -25,6 +25,18 @@ This can speed up org agenda on large iCalendar files."
   :type 'boolean
   :group 'org-ics-import)
 
+(defcustom org-ics-import-todo-keyword "TODO"
+  "String used as the state for importing upcoming events.
+Set to nil string if you would like to import them as plain events"
+  :type '(choice (const :tag "Use no todo keyword" nil)
+                 (string :tag "String to be used as the todo keyword")))
+
+(defcustom org-ics-import-done-keyword "DONE"
+  "String used as the state for importing past events.
+Set to nil string if you would like to import them as plain events"
+  :type '(choice (const :tag "Use no done keyword" nil)
+                 (string :tag "String to be used as the done keyword")))
+
 (defcustom org-ics-import-calendars-alist '()
   "Association list specifying the mappings between calendars and org files.
 Of the form ((https://full/url/to/calendar.ics . path/to/calendar_org_file.org))
@@ -145,7 +157,11 @@ Events are then parsed and then `org-file' overwritten."
 	 (extra-properties (org-ics-import--create-property-list event))
 	 (event-passed (if dtstart-encoded (time-less-p (current-time) dtstart-encoded) nil))
          (todo-line (format "* %s %s\nSCHEDULED: <%s>\n:PROPERTIES:\n:CUSTOM_ID: %s\n%s:END:\n%s"
-			    (if event-passed "TODO" "DONE")
+			    (if-let  ((kw (if event-passed
+                                              org-ics-import-todo-keyword
+                                            org-ics-import-done-keyword)))
+                                (concat kw " ")
+                              "")
 			    summary
 			    time
 			    uid

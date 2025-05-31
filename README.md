@@ -37,11 +37,12 @@ The command `org-ics-import-refresh-calendars` asynchronously downloads each iCa
 
 To automatically run this command on a timer, set `org-ics-import-update-interval` to the number of seconds between calendar refreshes.
 
+Custom keywords for future and passed events can be set using the `org-ics-import-todo-keyword` and `org-ics-import-done-keyword`, respectively.
+
 ### Filtering
 
 Microsoft Outlook (and probably others) includes passed events and cancelled events in their iCalendar files.
 The boolean variable `org-ics-import-exclude-passed-events` controls whether to exclude passed events from the resulting org file.
-If `nil`, passed events will be marked as `DONE` rather than `TODO`.
 
 If the summary of an event (the title you would see in a calendar) contains one of the strings found in `org-ics-import-exclude-strings` it will be excluded.
 This can be useful to filter out cancelled events.
