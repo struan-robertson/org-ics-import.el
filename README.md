@@ -49,6 +49,6 @@ This can be useful to filter out cancelled events.
 
 ## Contributing 
 
-Please send any patches, issues, or questions to my [mailing list](https://lists.sr.ht/~struanr/emacs-package-development).
+Please send any patches, issues, or questions to my [mailing list](https://lists.sr.ht/~struanr/emacs-package-development). If you would prefer to create a pull request or issue, I maintain a Codeberg [mirror of this repository.](https://codeberg.org/struan/org-ics-import.el)
 
 
