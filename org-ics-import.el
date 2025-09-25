@@ -29,13 +29,15 @@ This can speed up org agenda on large iCalendar files."
   "String used as the state for importing upcoming events.
 Set to nil string if you would like to import them as plain events"
   :type '(choice (const :tag "Use no todo keyword" nil)
-                 (string :tag "String to be used as the todo keyword")))
+                 (string :tag "String to be used as the todo keyword"))
+  :group 'org-ics-import)
 
 (defcustom org-ics-import-done-keyword "DONE"
   "String used as the state for importing past events.
 Set to nil string if you would like to import them as plain events"
   :type '(choice (const :tag "Use no done keyword" nil)
-                 (string :tag "String to be used as the done keyword")))
+                 (string :tag "String to be used as the done keyword"))
+  :group 'org-ics-import)
 
 (defcustom org-ics-import-calendars-alist '()
   "Association list specifying the mappings between calendars and org files.
@@ -72,6 +74,7 @@ They will be overwritten with every calendar refresh."
 
 ;;;; Automatic Updating
 
+;; TODO test if this shouldn't all be in the when block
 (defun org-ics-import--start-update-timer ()
   "Start/restart update timer `org-ics-import--update-timer'.
 Timer interval is specified by `org-ics-import-update-interval'."
@@ -97,7 +100,7 @@ Timer interval is specified by `org-ics-import-update-interval'."
 
 (defun org-ics-import--create-property-list (event)
   "Create a list of properties from `event' for the org :PROPERTIES: drawer.
-This list excludes the SUMMARY, DTSTART, LCOATION, DESCRIPTION and UID properties
+This list excludes SUMMARY, DTSTART, LOCATION, DESCRIPTION and UID properties
 as they are represented elsewhere in the TODO.
 \\='ICAL_\\=' is added to the start of the property name."
   (let ((properties (caddr event)))
@@ -125,7 +128,7 @@ Events are then parsed and then `org-file' overwritten."
        (when-let ((err (plist-get status :error)))
 	 (error "Download error: %S" err))
        (goto-char (point-min))
-       (re-search-forward "\r\n\r\n\\|\n\n")
+       (re-search-forward "\r\n\r\n\\|\n\n") 
        (delete-region (point-min) (point))
        (let* ((events (icalendar--all-events
 		       (org-ics-import--read-buffer-to-list
