@@ -25,16 +25,16 @@ This can speed up org agenda on large iCalendar files."
   :type 'boolean
   :group 'org-ics-import)
 
-(defcustom org-ics-import-todo-keyword "TODO"
+(defcustom org-ics-import-todo-keyword nil
   "String used as the state for importing upcoming events.
-Set to nil string if you would like to import them as plain events"
+If set to `nil' plain events are created."
   :type '(choice (const :tag "Use no todo keyword" nil)
                  (string :tag "String to be used as the todo keyword"))
   :group 'org-ics-import)
 
-(defcustom org-ics-import-done-keyword "DONE"
+(defcustom org-ics-import-done-keyword nil
   "String used as the state for importing past events.
-Set to nil string if you would like to import them as plain events"
+If `org-ics-import-todo-keyword' is nil, this value has no effect."
   :type '(choice (const :tag "Use no done keyword" nil)
                  (string :tag "String to be used as the done keyword"))
   :group 'org-ics-import)
@@ -150,12 +150,13 @@ Events are then parsed and then `org-file' overwritten."
 	 (local-time (decode-time encoded-time nil)))
     (encode-time local-time)))
 
-
 (defun org-ics-import--event-to-org-todo (timezones event)
   "Convert an icalendar EVENT `event' to an org TODO item."
   (let* ((summary (icalendar--get-event-property event 'SUMMARY))
          (dtstart (icalendar--get-event-property event 'DTSTART))
 	 (dtstart-attrs (icalendar--get-event-property-attributes event 'DTSTART))
+	 (dtend (icalendar--get-event-property event 'DTEND))
+	 (dtend-attrs (icalendar--get-event-property-attributes event 'DTEND))
 	 (description (icalendar--get-event-property event 'DESCRIPTION))
 	 (description (if description (replace-regexp-in-string "\\\\n" "\n" description) ""))
 	 (uid (icalendar--get-event-property event 'UID))
@@ -168,17 +169,29 @@ Events are then parsed and then `org-file' overwritten."
 				    (org-ics-import--convert-time-to-local timestr (icalendar--find-time-zone dtstart-attrs timezones))
 				  (encode-time timestr)))
 			    nil))
-         (time (if dtstart-encoded (format-time-string "%Y-%m-%d %a %H:%M" dtstart-encoded) ""))
+	 (dtend-encoded (if dtend
+			    (let ((timestr (parse-time-string
+					    (if (> (length dtend) 9)
+						dtend
+					      (concat dtend "T00")))))
+			      (if (plist-member dtend-attrs 'TZID)
+				  (org-ics-import--convert-time-to-local timestr (icalendar--find-time-zone dtend-attrs timezones))
+				(encode-time timestr)))
+			  nil))
+         (start-time (if dtstart-encoded (format-time-string "%Y-%m-%d %a %H:%M" dtstart-encoded) ""))
+	 (end-time (if dtend-encoded (format-time-string "%Y-%m-%d %a %H:%M" dtend-encoded) ""))
 	 (extra-properties (org-ics-import--create-property-list event))
 	 (event-passed (if dtstart-encoded (time-less-p (current-time) dtstart-encoded) nil))
-         (todo-line (format "* %s %s\nSCHEDULED: <%s>\n:PROPERTIES:\n:CUSTOM_ID: %s\n%s:END:\n%s"
-			    (if-let  ((kw (if event-passed
+         (todo-line (format "* %s %s\n%s\n:PROPERTIES:\n:CUSTOM_ID: %s\n%s:END:\n%s"
+			    (if-let  ((kw (if (and org-ics-import-todo-keyword event-passed)
                                               org-ics-import-todo-keyword
                                             org-ics-import-done-keyword)))
                                 (concat kw " ")
                               "")
 			    summary
-			    time
+			    (if (and start-time end-time)
+				(format "<%s>--<%s>" start-time end-time)
+			      (format "<%s>" start-time))
 			    uid
 			    extra-properties
 			    description)))
