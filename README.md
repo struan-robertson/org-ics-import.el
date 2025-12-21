@@ -2,7 +2,7 @@
 
 A pure Emacs Lisp package to allow importing remote iCalendar files to Org Agenda.
 
-The idea is to have an Org file for each calendar, with todo headers for each event.
+The idea is to have an Org file for each calendar, with org headings for each event.
 This file will be overwritten at each update, **PLEASE DO NOT USE YOUR EXISTING ORG AGENDA FILES.**
 
 ## Installation 
@@ -26,7 +26,11 @@ Any solution that allows installing packages from git repositories should work, 
 ### Not Yet Implemented
 
   * Repeating events
-  * Event time zones different from your local machine
+  
+### Features
+
+  * Scheduled calendar refresh
+  * Automatic time zone conversion
 
 ## Configuration
 
