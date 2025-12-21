@@ -74,7 +74,6 @@ They will be overwritten with every calendar refresh."
 
 ;;;; Automatic Updating
 
-;; TODO test if this shouldn't all be in the when block
 (defun org-ics-import--start-update-timer ()
   "Start/restart update timer `org-ics-import--update-timer'.
 Timer interval is specified by `org-ics-import-update-interval'."
@@ -95,6 +94,7 @@ Timer interval is specified by `org-ics-import-update-interval'."
 (with-eval-after-load 'org-ics-import
   (when org-ics-import-update-interval
     (org-ics-import--start-update-timer)))
+
 
 ;;;; Core Functionality
 
@@ -130,31 +130,43 @@ Events are then parsed and then `org-file' overwritten."
        (goto-char (point-min))
        (re-search-forward "\r\n\r\n\\|\n\n") 
        (delete-region (point-min) (point))
-       (let* ((events (icalendar--all-events
-		       (org-ics-import--read-buffer-to-list
-			(current-buffer))))
+       (let* ((icalendar (org-ics-import--read-buffer-to-list (current-buffer)))
+	      (timezones (icalendar--convert-all-timezones icalendar))
+	      (events (icalendar--all-events icalendar))
 	      (todos (string-join
 		      (remove nil
-			      (mapcar #'org-ics-import--event-to-org-todo events))
+			      (mapcar (apply-partially #'org-ics-import--event-to-org-todo timezones) events))
 		      "\n")))
 	 (with-temp-file target-file
 	   (set-buffer-file-coding-system 'raw-text t) ;; Handle buffer encoding
 	   (insert todos)
 	   (message (format "Successfully parsed %s" target-file))))))))
 
-(defun org-ics-import--event-to-org-todo (event)
+(defun org-ics-import--convert-time-to-local (time timezone)
+  "Convert time `time' from a specified timezone `timezone' to local time"
+  (let* ((encoded-time (encode-time (nconc
+				     (butlast time 3)
+				     `(nil -1 ,timezone))))
+	 (local-time (decode-time encoded-time nil)))
+    (encode-time local-time)))
+
+
+(defun org-ics-import--event-to-org-todo (timezones event)
   "Convert an icalendar EVENT `event' to an org TODO item."
   (let* ((summary (icalendar--get-event-property event 'SUMMARY))
          (dtstart (icalendar--get-event-property event 'DTSTART))
+	 (dtstart-attrs (icalendar--get-event-property-attributes event 'DTSTART))
 	 (description (icalendar--get-event-property event 'DESCRIPTION))
 	 (description (if description (replace-regexp-in-string "\\\\n" "\n" description) ""))
 	 (uid (icalendar--get-event-property event 'UID))
 	 (dtstart-encoded (if dtstart
-			      (encode-time
-			       (parse-time-string
-				(if (> (length dtstart) 9)
-				    dtstart
-				  (concat dtstart "T00"))))
+			      (let ((timestr (parse-time-string
+					      (if (> (length dtstart) 9)
+						  dtstart
+						(concat dtstart "T00")))))
+				(if (plist-member dtstart-attrs 'TZID)
+				    (org-ics-import--convert-time-to-local timestr (icalendar--find-time-zone dtstart-attrs timezones))
+				  (encode-time timestr)))
 			    nil))
          (time (if dtstart-encoded (format-time-string "%Y-%m-%d %a %H:%M" dtstart-encoded) ""))
 	 (extra-properties (org-ics-import--create-property-list event))
