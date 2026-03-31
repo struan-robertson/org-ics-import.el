@@ -105,7 +105,7 @@ Timer interval is specified by `org-ics-import-update-interval'."
 ;;;; Repeat Events
 
 (defmacro org-ics-import--create-plist-key (property)
-  "Downcase and append ':' to `property' for use as a plist-key"
+  "Downcase and prepend ':' to `property' for use as a plist-key"
   `(intern (concat ":" (downcase ,property))))
 
 (defun org-ics-import--rrule-parse (rrule-str dtstart)
